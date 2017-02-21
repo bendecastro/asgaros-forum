@@ -117,15 +117,13 @@ class AsgarosForum {
         // Update online status.
         AsgarosForumOnline::updateOnlineStatus();
 
-        if (isset($_GET['view'])) {
-            $this->current_view = esc_html($_GET['view']);
-        }
+        $this->current_view = get_query_var('view');
 
         if (isset($_GET['part']) && absint($_GET['part']) > 0) {
             $this->current_page = (absint($_GET['part']) - 1);
         }
 
-        $elementID = (isset($_GET['id'])) ? absint($_GET['id']) : false;
+        $elementID = get_query_var('id');
 
         switch ($this->current_view) {
             case 'forum':
@@ -806,20 +804,35 @@ class AsgarosForum {
         $error['forum'] = __('Sorry, this forum does not exist.', 'asgaros-forum');
 
         if ($id) {
+            $checkAgainstID = (!is_numeric($id)) ? false : true;
             $query = '';
             $results = false;
 
             // Build the query.
-            switch ($contentType) {
-                case 'post':
-                    $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic, p.id AS current_post FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) LEFT JOIN {$this->tables->posts} AS p ON (t.id = p.parent_id) WHERE p.id = {$id};";
-                    break;
-                case 'topic':
-                    $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) WHERE t.id = {$id};";
-                    break;
-                case 'forum':
-                    $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum FROM {$this->tables->forums} AS f WHERE f.id = {$id};";
-                    break;
+            if ($checkAgainstID) {
+                switch ($contentType) {
+                    case 'post':
+                        $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic, p.id AS current_post FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) LEFT JOIN {$this->tables->posts} AS p ON (t.id = p.parent_id) WHERE p.id = {$id};";
+                        break;
+                    case 'topic':
+                        $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) WHERE t.id = {$id};";
+                        break;
+                    case 'forum':
+                        $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum FROM {$this->tables->forums} AS f WHERE f.id = {$id};";
+                        break;
+                }
+            } else {
+                switch ($contentType) {
+                    case 'post':
+                        //$query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic, p.id AS current_post FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) LEFT JOIN {$this->tables->posts} AS p ON (t.id = p.parent_id) WHERE p.slug = '{$id}';";
+                        break;
+                    case 'topic':
+                        //$query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum, t.id AS current_topic FROM {$this->tables->forums} AS f LEFT JOIN {$this->tables->topics} AS t ON (f.id = t.parent_id) WHERE t.slug = '{$id}';";
+                        break;
+                    case 'forum':
+                        $query = "SELECT f.parent_id AS current_category, f.id AS current_forum, f.parent_forum AS parent_forum FROM {$this->tables->forums} AS f WHERE f.slug = '{$id}';";
+                        break;
+                }
             }
 
             $results = $this->db->get_row($query);
